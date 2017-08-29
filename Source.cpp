@@ -30,27 +30,25 @@ class KPoints
 {
 public:
 	KPoints();
-	void newPixel(Pixels _pixel);
+	void newPixel(int _pixelIndex);
 	void clearPixels();
-	void recalculatePosition();
-	void colorImage(sf::Image &image);
+	void recalculatePosition(Pixels *_pixel);
+	void colorImage(sf::Image &image, int _imageSizeX);
 	int getR();
 	int getG();
 	int getB();
 	void reservePixels(int _n);
-	int pixelsSize();
 
 private:
 	int r, g, b;
-	std::vector<Pixels> kPixels;
-	//std::vector<Pixels>::size_type kPixelsSize;
+	std::vector<int> kPixels;
 };
 
 
 
 int main()
 {
-	srand(0);
+	srand(time(0));
 	sf::Image inputImage, outputImage;
 	if (!inputImage.loadFromFile("D:\\Images\\holdon.jpg")) { return -1; }
 	sf::Vector2u imageSize;
@@ -104,7 +102,7 @@ int main()
 								closestPoint = j;
 							}
 						}
-						kPoint[closestPoint].newPixel(pixel[i]);
+						kPoint[closestPoint].newPixel(i);
 						if (i == 10000)
 						{
 							clockDuration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
@@ -120,8 +118,8 @@ int main()
 					std::cout << "Spent " << clockDuration << " to complete the image (" << imageSize.x *imageSize.y << " pixels)\n";
 					for (int i = 0; i < KPOINTS; i++)
 					{
-						kPoint[i].recalculatePosition();
-						kPoint[i].colorImage(outputImage);
+						kPoint[i].recalculatePosition(pixel);
+						kPoint[i].colorImage(outputImage, imageSize.x);
 					}
 					texture.loadFromImage(outputImage);
 					for (int i = 0; i < KPOINTS; i++)
@@ -192,9 +190,9 @@ KPoints::KPoints()
 	b = rand() % 255;
 }
 
-void KPoints::newPixel(Pixels _pixel)
+void KPoints::newPixel(int _pixelIndex)
 {
-	kPixels.push_back(_pixel);
+	kPixels.push_back(_pixelIndex);
 }
 
 void KPoints::clearPixels()
@@ -202,33 +200,33 @@ void KPoints::clearPixels()
 	kPixels.clear();
 }
 
-void KPoints::recalculatePosition()
+void KPoints::recalculatePosition(Pixels *_pixel)
 {
 	float temp = 0;
 	for (int i = 0; i < kPixels.size(); i++)
 	{
-		temp = temp + (kPixels[i].getR() - temp) / (i + 1);
+		temp = temp + (_pixel[kPixels[i]].getR() - temp) / (i + 1);
 	}
 	r = (int)temp;
 	temp = 0;
 	for (int i = 0; i < kPixels.size(); i++)
 	{
-		temp = temp + (kPixels[i].getG() - temp) / (i + 1);
+		temp = temp + (_pixel[kPixels[i]].getG() - temp) / (i + 1);
 	}
 	g = (int)temp;
 	temp = 0;
 	for (int i = 0; i < kPixels.size(); i++)
 	{
-		temp = temp + (kPixels[i].getG() - temp) / (i + 1);
+		temp = temp + (_pixel[kPixels[i]].getB() - temp) / (i + 1);
 	}
 	b = (int)temp;
 }
 
-void KPoints::colorImage(sf::Image &image)
+void KPoints::colorImage(sf::Image &_image, int _imageSizeX)
 {
 	for (int i = 0; i < kPixels.size(); i++)
 	{
-		image.setPixel(kPixels[i].getX(), kPixels[i].getY(), sf::Color(r, g, b));
+		_image.setPixel(kPixels[i] % _imageSizeX, kPixels[i] / _imageSizeX, sf::Color(r, g, b));
 	}
 }
 
@@ -249,11 +247,5 @@ int KPoints::getB()
 
 void KPoints::reservePixels(int _n)
 {
-	//kPixelsSize = kPixels.capacity();
 	kPixels.reserve(_n);
-}
-
-int KPoints::pixelsSize()
-{
-	return kPixels.capacity();
 }
